@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QuickLink — Admin Dashboard</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+  body {
+    min-height: 100vh;
+    background: radial-gradient(circle at top, #1a0b2e 0%, #0a0014 70%);
+    color: #fff;
+    padding: 20px 14px 60px;
+  }
+  .glow1, .glow2 {
+    position: fixed; border-radius: 50%; pointer-events: none; z-index: 0;
+  }
+  .glow1 { width: 400px; height: 400px; background: radial-gradient(circle, rgba(0,255,200,0.1), transparent 70%); top: -120px; left: -100px; }
+  .glow2 { width: 400px; height: 400px; background: radial-gradient(circle, rgba(168,85,247,0.1), transparent 70%); bottom: -120px; right: -100px; }
+
+  .wrap { max-width: 600px; margin: 0 auto; position: relative; z-index: 1; }
+
+  header { text-align: center; margin-bottom: 24px; }
+  .logo {
+    font-size: 26px; font-weight: 900;
+    background: linear-gradient(90deg, #00ffc8, #a855f7);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .sub { color: #888; font-size: 12px; margin-top: 4px; }
+
+  /* Login gate */
+  #loginGate { max-width: 360px; margin: 80px auto 0; text-align: center; }
+  #loginGate input {
+    width: 100%; padding: 14px; margin-top: 14px; border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.15); background: rgba(0,0,0,0.3); color: #fff; font-size: 14px; outline: none;
+  }
+  #loginGate button {
+    width: 100%; margin-top: 14px; padding: 14px; border: none; border-radius: 12px;
+    background: linear-gradient(90deg, #00ffc8, #a855f7); color: #06031a; font-weight: 700; font-size: 15px; cursor: pointer;
+  }
+  #loginError { color: #ff8e8e; font-size: 13px; margin-top: 10px; min-height: 16px; }
+
+  #dashboard { display: none; }
+
+  .stats-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 20px;
+  }
+  .stat-card {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(0,255,200,0.18);
+    border-radius: 14px;
+    padding: 16px;
+    text-align: center;
+  }
+  .stat-val { font-size: 22px; font-weight: 800; color: #00ffc8; }
+  .stat-label { font-size: 11px; color: #888; margin-top: 4px; }
+
+  .section {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 14px;
+    padding: 18px;
+    margin-bottom: 16px;
+  }
+  .section-title { font-size: 14px; font-weight: 700; margin-bottom: 12px; color: #a855f7; }
+
+  .rate-row { display: flex; gap: 10px; align-items: center; }
+  .rate-row input {
+    flex: 1; padding: 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.15);
+    background: rgba(0,0,0,0.3); color: #fff; font-size: 14px; outline: none;
+  }
+  .rate-row button {
+    padding: 12px 16px; border: none; border-radius: 10px; background: linear-gradient(90deg,#00ffc8,#00b894);
+    color: #002; font-weight: 700; cursor: pointer; white-space: nowrap;
+  }
+
+  .link-item {
+    border-bottom: 1px solid rgba(255,255,255,0.08);
+    padding: 10px 0;
+    font-size: 12px;
+  }
+  .link-item:last-child { border-bottom: none; }
+  .link-url { color: #ccc; word-break: break-all; margin-bottom: 4px; }
+  .link-meta { display: flex; justify-content: space-between; color: #888; }
+  .link-meta span.earn { color: #00ffc8; font-weight: 700; }
+
+  .wd-row { display: flex; gap: 10px; margin-bottom: 10px; }
+  .wd-row input {
+    flex: 1; padding: 12px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.15);
+    background: rgba(0,0,0,0.3); color: #fff; font-size: 13px; outline: none;
+  }
+  .wd-btn {
+    width: 100%; padding: 13px; border: none; border-radius: 10px;
+    background: linear-gradient(90deg,#a855f7,#7c3aed); color: #fff; font-weight: 700; cursor: pointer;
+  }
+  .wd-item {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 10px 0; border-bottom: 1px solid rgba(255,255,255,0.08); font-size: 13px;
+  }
+  .wd-item:last-child { border-bottom: none; }
+  .badge { font-size: 10px; padding: 4px 8px; border-radius: 20px; font-weight: 700; }
+  .badge.pending { background: rgba(255,193,7,0.15); color: #ffc107; }
+  .badge.completed { background: rgba(0,255,200,0.15); color: #00ffc8; }
+  .mark-btn {
+    background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.2);
+    color: #fff; padding: 5px 10px; border-radius: 8px; font-size: 11px; cursor: pointer; margin-left: 6px;
+  }
+  .empty { color: #666; font-size: 12px; text-align: center; padding: 14px 0; }
+  .wd-msg { font-size: 12px; color: #ff8e8e; min-height: 16px; margin-top: 4px; }
+</style>
+</head>
+<body>
+
+<div class="glow1"></div>
+<div class="glow2"></div>
+
+<div class="wrap">
+  <header>
+    <div class="logo">⚡ QuickLink Admin</div>
+    <div class="sub">Dashboard</div>
+  </header>
+
+  <div id="loginGate">
+    <input type="password" id="adminPass" placeholder="Enter admin password">
+    <button id="loginBtn">Unlock Dashboard</button>
+    <div id="loginError"></div>
+  </div>
+
+  <div id="dashboard">
+    <div class="stats-grid">
+      <div class="stat-card"><div class="stat-val" id="statClicks">0</div><div class="stat-label">Total Clicks</div></div>
+      <div class="stat-card"><div class="stat-val" id="statEarnings">₹0</div><div class="stat-label">Total Earnings</div></div>
+      <div class="stat-card"><div class="stat-val" id="statBalance">₹0</div><div class="stat-label">Available Balance</div></div>
+      <div class="stat-card"><div class="stat-val" id="statLinks">0</div><div class="stat-label">Links Created</div></div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">💰 Rate Per Click</div>
+      <div class="rate-row">
+        <input type="number" id="rateInput" step="0.01" placeholder="e.g. 0.50">
+        <button id="rateBtn">Update</button>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">💸 Request Withdrawal</div>
+      <div class="wd-row">
+        <input type="number" id="wdAmount" placeholder="Amount (₹)">
+        <input type="text" id="wdMethod" placeholder="UPI ID / note">
+      </div>
+      <button class="wd-btn" id="wdBtn">Submit Withdrawal Request</button>
+      <div class="wd-msg" id="wdMsg"></div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">📋 Withdrawal History</div>
+      <div id="wdList"><div class="empty">No withdrawal requests yet.</div></div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">🔑 API Keys</div>
+      <div class="wd-row">
+        <input type="text" id="keyOwnerName" placeholder="User/owner name (label)">
+      </div>
+      <button class="wd-btn" id="genKeyBtn">Generate New API Key</button>
+      <div class="wd-msg" id="keyMsg"></div>
+      <div id="apiKeysList" style="margin-top:12px;"><div class="empty">No API keys yet.</div></div>
+    </div>
+
+    <div class="section">
+      <div class="section-title">🔗 Your Links</div>
+      <div id="linksList"><div class="empty">No links created yet.</div></div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getDatabase, ref, get, set, onValue, push, update } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyB_9zSUKd4ewaDnGZBUrYqxWm1QAIkOcs8",
+    authDomain: "cheatera-e6f5d.firebaseapp.com",
+    databaseURL: "https://cheatera-e6f5d-default-rtdb.firebaseio.com",
+    projectId: "cheatera-e6f5d"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+
+  // ---- SIMPLE ADMIN PASSWORD ----
+  // Change this to your own password.
+  const ADMIN_PASSWORD = "changeme123";
+
+  const loginGate = document.getElementById("loginGate");
+  const dashboard = document.getElementById("dashboard");
+  const adminPass = document.getElementById("adminPass");
+  const loginBtn = document.getElementById("loginBtn");
+  const loginError = document.getElementById("loginError");
+
+  function tryLogin() {
+    if (adminPass.value === ADMIN_PASSWORD) {
+      loginGate.style.display = "none";
+      dashboard.style.display = "block";
+      sessionStorage.setItem("ql_admin_ok", "1");
+      initDashboard();
+    } else {
+      loginError.textContent = "Wrong password.";
+    }
+  }
+  loginBtn.addEventListener("click", tryLogin);
+  adminPass.addEventListener("keydown", (e) => { if (e.key === "Enter") tryLogin(); });
+
+  if (sessionStorage.getItem("ql_admin_ok") === "1") {
+    loginGate.style.display = "none";
+    dashboard.style.display = "block";
+    initDashboard();
+  }
+
+  function initDashboard() {
+    // Live stats
+    onValue(ref(db, "settings"), (snap) => {
+      const s = snap.val() || {};
+      document.getElementById("statClicks").textContent = s.totalClicks || 0;
+      document.getElementById("statEarnings").textContent = "₹" + (s.totalEarnings || 0).toFixed(2);
+      document.getElementById("statBalance").textContent = "₹" + (s.availableBalance || 0).toFixed(2);
+      document.getElementById("rateInput").placeholder = "Current: ₹" + (s.ratePerClick != null ? s.ratePerClick : 0.5);
+    });
+
+    // Rate update
+    document.getElementById("rateBtn").addEventListener("click", async () => {
+      const val = parseFloat(document.getElementById("rateInput").value);
+      if (isNaN(val) || val < 0) return;
+      await set(ref(db, "settings/ratePerClick"), val);
+      document.getElementById("rateInput").value = "";
+      document.getElementById("rateInput").placeholder = "Current: ₹" + val;
+    });
+
+    // Links list
+    onValue(ref(db, "links"), (snap) => {
+      const data = snap.val() || {};
+      const entries = Object.entries(data).sort((a, b) => (b[1].createdAt || 0) - (a[1].createdAt || 0));
+      document.getElementById("statLinks").textContent = entries.length;
+
+      const listEl = document.getElementById("linksList");
+      if (entries.length === 0) {
+        listEl.innerHTML = '<div class="empty">No links created yet.</div>';
+        return;
+      }
+      listEl.innerHTML = entries.map(([code, l]) => `
+        <div class="link-item">
+          <div class="link-url">/r.html?c=${code} → ${l.longUrl}</div>
+          <div class="link-meta">
+            <span>${l.clicks || 0} clicks</span>
+            <span class="earn">₹${(l.earnings || 0).toFixed(2)}</span>
+          </div>
+        </div>
+      `).join("");
+    });
+
+    // Withdrawal submit
+    document.getElementById("wdBtn").addEventListener("click", async () => {
+      const amount = parseFloat(document.getElementById("wdAmount").value);
+      const method = document.getElementById("wdMethod").value.trim();
+      const wdMsg = document.getElementById("wdMsg");
+      wdMsg.textContent = "";
+
+      if (isNaN(amount) || amount <= 0) return (wdMsg.textContent = "Enter a valid amount.");
+      if (!method) return (wdMsg.textContent = "Enter UPI ID or note.");
+
+      const balSnap = await get(ref(db, "settings/availableBalance"));
+      const balance = balSnap.exists() ? balSnap.val() : 0;
+      if (amount > balance) return (wdMsg.textContent = "Amount exceeds available balance (₹" + balance.toFixed(2) + ").");
+
+      const wRef = push(ref(db, "withdrawals"));
+      await set(wRef, { amount, method, status: "pending", requestedAt: Date.now() });
+      await set(ref(db, "settings/availableBalance"), balance - amount);
+
+      document.getElementById("wdAmount").value = "";
+      document.getElementById("wdMethod").value = "";
+      wdMsg.style.color = "#00ffc8";
+      wdMsg.textContent = "Withdrawal request submitted!";
+      setTimeout(() => { wdMsg.textContent = ""; wdMsg.style.color = "#ff8e8e"; }, 2500);
+    });
+
+    // Withdrawal list
+    onValue(ref(db, "withdrawals"), (snap) => {
+      const data = snap.val() || {};
+      const entries = Object.entries(data).sort((a, b) => (b[1].requestedAt || 0) - (a[1].requestedAt || 0));
+      const listEl = document.getElementById("wdList");
+      if (entries.length === 0) {
+        listEl.innerHTML = '<div class="empty">No withdrawal requests yet.</div>';
+        return;
+      }
+      listEl.innerHTML = entries.map(([id, w]) => `
+        <div class="wd-item">
+          <div>₹${w.amount.toFixed(2)} — ${w.method}</div>
+          <div>
+            <span class="badge ${w.status}">${w.status}</span>
+            ${w.status === "pending" ? `<button class="mark-btn" data-id="${id}">Mark Paid</button>` : ""}
+          </div>
+        </div>
+      `).join("");
+
+      listEl.querySelectorAll(".mark-btn").forEach(btn => {
+        btn.addEventListener("click", async () => {
+          await update(ref(db, "withdrawals/" + btn.dataset.id), { status: "completed" });
+        });
+      });
+    });
+
+    // ---- API Keys ----
+    function generateApiKey() {
+      const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+      let key = "";
+      for (let i = 0; i < 32; i++) key += chars[Math.floor(Math.random() * chars.length)];
+      return key;
+    }
+
+    document.getElementById("genKeyBtn").addEventListener("click", async () => {
+      const ownerName = document.getElementById("keyOwnerName").value.trim();
+      const keyMsg = document.getElementById("keyMsg");
+      keyMsg.textContent = "";
+      if (!ownerName) return (keyMsg.textContent = "Enter a name/label for this key.");
+
+      const newKey = generateApiKey();
+      await set(ref(db, "apiKeys/" + newKey), {
+        ownerName,
+        createdAt: Date.now(),
+        totalRequests: 0,
+        active: true
+      });
+      document.getElementById("keyOwnerName").value = "";
+      keyMsg.style.color = "#00ffc8";
+      keyMsg.textContent = "Key generated: " + newKey + " (copy it now, shown below too)";
+      setTimeout(() => { keyMsg.textContent = ""; keyMsg.style.color = "#ff8e8e"; }, 4000);
+    });
+
+    onValue(ref(db, "apiKeys"), (snap) => {
+      const data = snap.val() || {};
+      const entries = Object.entries(data).sort((a, b) => (b[1].createdAt || 0) - (a[1].createdAt || 0));
+      const listEl = document.getElementById("apiKeysList");
+      if (entries.length === 0) {
+        listEl.innerHTML = '<div class="empty">No API keys yet.</div>';
+        return;
+      }
+      listEl.innerHTML = entries.map(([key, k]) => `
+        <div class="wd-item">
+          <div>
+            <div style="font-weight:700;">${k.ownerName || "Unnamed"}</div>
+            <div style="font-size:10px;color:#888;word-break:break-all;">${key}</div>
+            <div style="font-size:10px;color:#666;">${k.totalRequests || 0} requests</div>
+          </div>
+          <div>
+            <span class="badge ${k.active === false ? 'pending' : 'completed'}">${k.active === false ? 'inactive' : 'active'}</span>
+            <button class="mark-btn" data-key="${key}" data-active="${k.active !== false}">${k.active === false ? 'Enable' : 'Disable'}</button>
+          </div>
+        </div>
+      `).join("");
+
+      listEl.querySelectorAll(".mark-btn").forEach(btn => {
+        btn.addEventListener("click", async () => {
+          const isActive = btn.dataset.active === "true";
+          await update(ref(db, "apiKeys/" + btn.dataset.key), { active: !isActive });
+        });
+      });
+    });
+  }
+</script>
+</body>
+</html>

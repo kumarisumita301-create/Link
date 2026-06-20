@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Redirecting...</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+  body {
+    min-height: 100vh;
+    background: radial-gradient(circle at top, #1a0b2e 0%, #0a0014 70%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    overflow-x: hidden;
+  }
+  .bg-glow {
+    position: fixed;
+    width: 500px; height: 500px;
+    background: radial-gradient(circle, rgba(0,255,200,0.15), transparent 70%);
+    top: -100px; left: -100px;
+    pointer-events: none;
+  }
+  .card {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(0,255,200,0.25);
+    border-radius: 20px;
+    padding: 30px 24px;
+    width: 92%;
+    max-width: 420px;
+    text-align: center;
+    backdrop-filter: blur(12px);
+    box-shadow: 0 0 40px rgba(0,255,200,0.08);
+    position: relative;
+    z-index: 1;
+  }
+  .logo {
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    background: linear-gradient(90deg, #00ffc8, #a855f7);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    margin-bottom: 6px;
+  }
+  .sub { font-size: 12px; color: #888; margin-bottom: 22px; }
+
+  .ring-wrap { position: relative; width: 130px; height: 130px; margin: 0 auto 22px; }
+  svg { transform: rotate(-90deg); width: 130px; height: 130px; }
+  circle { fill: none; stroke-width: 8; }
+  .ring-bg { stroke: rgba(255,255,255,0.08); }
+  .ring-fg {
+    stroke: url(#grad);
+    stroke-linecap: round;
+    stroke-dasharray: 345;
+    stroke-dashoffset: 345;
+    transition: stroke-dashoffset 1s linear;
+  }
+  .count {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 38px; font-weight: 700; color: #00ffc8;
+  }
+
+  .ad-slot {
+    background: rgba(255,255,255,0.03);
+    border: 1px dashed rgba(255,255,255,0.15);
+    border-radius: 12px;
+    padding: 10px;
+    margin-bottom: 16px;
+    font-size: 12px;
+    color: #666;
+    overflow-x: auto;
+    display: flex;
+    justify-content: center;
+  }
+
+  .btn {
+    width: 100%;
+    padding: 15px;
+    border: none;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all .25s;
+  }
+  .btn-disabled {
+    background: rgba(255,255,255,0.08);
+    color: #666;
+  }
+  .btn-active {
+    background: linear-gradient(90deg, #00ffc8, #00b894);
+    color: #002;
+    box-shadow: 0 0 25px rgba(0,255,200,0.5);
+    animation: pulse 1.4s infinite;
+  }
+  @keyframes pulse {
+    0%,100% { transform: scale(1); }
+    50% { transform: scale(1.02); }
+  }
+  .dest {
+    margin-top: 14px;
+    font-size: 11px;
+    color: #555;
+    word-break: break-all;
+  }
+  .error { color: #ff5e5e; font-size: 14px; margin-top: 20px; }
+</style>
+</head>
+<body>
+
+<div class="bg-glow"></div>
+
+<div class="card" id="card">
+  <div class="logo">⚡ QuickLink</div>
+  <div class="sub">Your link is being prepared securely</div>
+
+  <div class="ring-wrap">
+    <svg>
+      <defs>
+        <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#00ffc8"/>
+          <stop offset="100%" stop-color="#a855f7"/>
+        </linearGradient>
+      </defs>
+      <circle class="ring-bg" cx="65" cy="65" r="55"></circle>
+      <circle class="ring-fg" id="ringFg" cx="65" cy="65" r="55"></circle>
+    </svg>
+    <div class="count" id="count">5</div>
+  </div>
+
+  <div class="ad-slot" id="adSlot1">
+    <script type="text/javascript">
+      atOptions = {
+        'key' : '8bc202fb3e3a798c150e96d8774be256',
+        'format' : 'iframe',
+        'height' : 90,
+        'width' : 728,
+        'params' : {}
+      };
+    </script>
+    <script type="text/javascript" src="https://www.highperformanceformat.com/8bc202fb3e3a798c150e96d8774be256/invoke.js"></script>
+  </div>
+
+  <div class="ad-slot" id="adSlot2">
+    <script type="text/javascript">
+      atOptions = {
+        'key' : '2cfdf2fbe5fb8cb52322c11f91278bd8',
+        'format' : 'iframe',
+        'height' : 600,
+        'width' : 160,
+        'params' : {}
+      };
+    </script>
+    <script type="text/javascript" src="https://www.highperformanceformat.com/2cfdf2fbe5fb8cb52322c11f91278bd8/invoke.js"></script>
+  </div>
+
+  <button class="btn btn-disabled" id="goBtn" disabled>Please wait...</button>
+  <div class="dest" id="destPreview"></div>
+</div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getDatabase, ref, get, runTransaction, push, set } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyB_9zSUKd4ewaDnGZBUrYqxWm1QAIkOcs8",
+    authDomain: "cheatera-e6f5d.firebaseapp.com",
+    databaseURL: "https://cheatera-e6f5d-default-rtdb.firebaseio.com",
+    projectId: "cheatera-e6f5d"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+
+  const params = new URLSearchParams(window.location.search);
+  const code = params.get("c");
+
+  const card = document.getElementById("card");
+  const countEl = document.getElementById("count");
+  const ringFg = document.getElementById("ringFg");
+  const goBtn = document.getElementById("goBtn");
+  const destPreview = document.getElementById("destPreview");
+
+  let longUrl = null;
+  const CIRC = 345;
+
+  async function init() {
+    if (!code) return showError("No link code provided.");
+
+    try {
+      const snap = await get(ref(db, "links/" + code));
+      if (!snap.exists()) return showError("This link doesn't exist or was removed.");
+
+      longUrl = snap.val().longUrl;
+      destPreview.textContent = "Destination: " + longUrl;
+
+      // Log click + earnings (only counted once per page load)
+      await trackClick();
+
+      startCountdown(5);
+    } catch (e) {
+      showError("Something went wrong. Try again later.");
+    }
+  }
+
+  async function trackClick() {
+    // Increment link's own click count
+    await runTransaction(ref(db, "links/" + code + "/clicks"), (v) => (v || 0) + 1);
+
+    // Get current rate
+    const rateSnap = await get(ref(db, "settings/ratePerClick"));
+    const rate = rateSnap.exists() ? rateSnap.val() : 0.5;
+
+    // Increment link earnings
+    await runTransaction(ref(db, "links/" + code + "/earnings"), (v) => (v || 0) + rate);
+
+    // Increment global stats
+    await runTransaction(ref(db, "settings/totalClicks"), (v) => (v || 0) + 1);
+    await runTransaction(ref(db, "settings/totalEarnings"), (v) => (v || 0) + rate);
+    await runTransaction(ref(db, "settings/availableBalance"), (v) => (v || 0) + rate);
+
+    // Optional click log for analytics graph
+    const logRef = push(ref(db, "clickLogs"));
+    await set(logRef, { shortCode: code, timestamp: Date.now() });
+  }
+
+  function startCountdown(seconds) {
+    let remaining = seconds;
+    countEl.textContent = remaining;
+    const offsetStep = CIRC / seconds;
+    ringFg.style.strokeDashoffset = CIRC;
+
+    const interval = setInterval(() => {
+      remaining--;
+      countEl.textContent = remaining > 0 ? remaining : "✓";
+      ringFg.style.strokeDashoffset = CIRC - offsetStep * (seconds - remaining);
+
+      if (remaining <= 0) {
+        clearInterval(interval);
+        enableButton();
+      }
+    }, 1000);
+  }
+
+  function enableButton() {
+    goBtn.disabled = false;
+    goBtn.textContent = "Continue to Link →";
+    goBtn.classList.remove("btn-disabled");
+    goBtn.classList.add("btn-active");
+    goBtn.addEventListener("click", () => {
+      window.location.href = longUrl;
+    });
+  }
+
+  function showError(msg) {
+    card.innerHTML = `<div class="logo">⚡ QuickLink</div><div class="error">${msg}</div>`;
+  }
+
+  init();
+</script>
+<script src="https://pl29818269.effectivecpmnetwork.com/fb/38/2a/fb382a373633668d619e355c2276426f.js"></script>
+</body>
+</html>

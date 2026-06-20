@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QuickLink — Shorten & Earn</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+  body {
+    min-height: 100vh;
+    background: radial-gradient(circle at top, #1a0b2e 0%, #0a0014 70%);
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 40px 16px;
+  }
+  .glow1, .glow2 {
+    position: fixed; border-radius: 50%; pointer-events: none; z-index: 0;
+  }
+  .glow1 { width: 400px; height: 400px; background: radial-gradient(circle, rgba(0,255,200,0.12), transparent 70%); top: -120px; left: -100px; }
+  .glow2 { width: 400px; height: 400px; background: radial-gradient(circle, rgba(168,85,247,0.12), transparent 70%); bottom: -120px; right: -100px; }
+
+  header { text-align: center; margin-bottom: 30px; z-index: 1; }
+  .logo {
+    font-size: 32px; font-weight: 900; letter-spacing: 1px;
+    background: linear-gradient(90deg, #00ffc8, #a855f7);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  .tagline { color: #888; font-size: 13px; margin-top: 6px; }
+
+  .card {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(0,255,200,0.2);
+    border-radius: 18px;
+    padding: 24px;
+    width: 100%;
+    max-width: 460px;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 0 40px rgba(0,255,200,0.06);
+    z-index: 1;
+  }
+
+  input[type="text"] {
+    width: 100%;
+    padding: 14px;
+    border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.15);
+    background: rgba(0,0,0,0.3);
+    color: #fff;
+    font-size: 14px;
+    margin-bottom: 14px;
+    outline: none;
+  }
+  input[type="text"]:focus { border-color: #00ffc8; }
+
+  .btn {
+    width: 100%;
+    padding: 15px;
+    border: none;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    background: linear-gradient(90deg, #00ffc8, #a855f7);
+    color: #06031a;
+    box-shadow: 0 0 25px rgba(0,255,200,0.3);
+    transition: transform .2s;
+  }
+  .btn:active { transform: scale(0.97); }
+  .btn:disabled { opacity: 0.5; }
+
+  .result {
+    margin-top: 20px;
+    background: rgba(0,255,200,0.06);
+    border: 1px solid rgba(0,255,200,0.3);
+    border-radius: 12px;
+    padding: 16px;
+    display: none;
+  }
+  .result.show { display: block; }
+  .result-link {
+    color: #00ffc8;
+    font-weight: 700;
+    font-size: 15px;
+    word-break: break-all;
+    margin-bottom: 10px;
+  }
+  .copy-btn {
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.2);
+    color: #fff;
+    padding: 8px 14px;
+    border-radius: 8px;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  .msg { font-size: 13px; margin-top: 10px; color: #ff8e8e; min-height: 16px; }
+  .footer { margin-top: 30px; font-size: 12px; color: #555; z-index: 1; }
+  .footer a { color: #00ffc8; text-decoration: none; }
+</style>
+</head>
+<body>
+
+<div class="glow1"></div>
+<div class="glow2"></div>
+
+<header>
+  <div class="logo">⚡ QuickLink</div>
+  <div class="tagline">Shorten your links. Earn on every click.</div>
+</header>
+
+<div class="card">
+  <input type="text" id="urlInput" placeholder="Paste your long URL here...">
+  <button class="btn" id="shortenBtn">Shorten & Generate</button>
+  <div class="msg" id="msg"></div>
+
+  <div class="result" id="result">
+    <div class="result-link" id="resultLink"></div>
+    <button class="copy-btn" id="copyBtn">📋 Copy Link</button>
+  </div>
+</div>
+
+<div class="footer">Admin? <a href="admin.html">Go to Dashboard</a></div>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getDatabase, ref, set, get } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyB_9zSUKd4ewaDnGZBUrYqxWm1QAIkOcs8",
+    authDomain: "cheatera-e6f5d.firebaseapp.com",
+    databaseURL: "https://cheatera-e6f5d-default-rtdb.firebaseio.com",
+    projectId: "cheatera-e6f5d"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+
+  const urlInput = document.getElementById("urlInput");
+  const shortenBtn = document.getElementById("shortenBtn");
+  const msg = document.getElementById("msg");
+  const result = document.getElementById("result");
+  const resultLink = document.getElementById("resultLink");
+  const copyBtn = document.getElementById("copyBtn");
+
+  function isValidUrl(str) {
+    try { new URL(str); return true; } catch { return false; }
+  }
+
+  function generateCode(len = 6) {
+    const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    let code = "";
+    for (let i = 0; i < len; i++) code += chars[Math.floor(Math.random() * chars.length)];
+    return code;
+  }
+
+  async function shortenLink() {
+    const longUrl = urlInput.value.trim();
+    msg.textContent = "";
+    result.classList.remove("show");
+
+    if (!longUrl) return (msg.textContent = "Please paste a URL first.");
+    if (!isValidUrl(longUrl)) return (msg.textContent = "That doesn't look like a valid URL (include https://).");
+
+    shortenBtn.disabled = true;
+    shortenBtn.textContent = "Generating...";
+
+    try {
+      let code = generateCode();
+      // ensure uniqueness (very low collision chance, but check anyway)
+      let exists = (await get(ref(db, "links/" + code))).exists();
+      while (exists) {
+        code = generateCode();
+        exists = (await get(ref(db, "links/" + code))).exists();
+      }
+
+      await set(ref(db, "links/" + code), {
+        longUrl,
+        createdAt: Date.now(),
+        clicks: 0,
+        earnings: 0
+      });
+
+      const shortUrl = window.location.origin + window.location.pathname.replace("index.html", "") + "r.html?c=" + code;
+      resultLink.textContent = shortUrl;
+      result.classList.add("show");
+      copyBtn.onclick = () => {
+        navigator.clipboard.writeText(shortUrl);
+        copyBtn.textContent = "✅ Copied!";
+        setTimeout(() => (copyBtn.textContent = "📋 Copy Link"), 1500);
+      };
+      urlInput.value = "";
+    } catch (e) {
+      msg.textContent = "Error creating link. Please try again.";
+    } finally {
+      shortenBtn.disabled = false;
+      shortenBtn.textContent = "Shorten & Generate";
+    }
+  }
+
+  shortenBtn.addEventListener("click", shortenLink);
+  urlInput.addEventListener("keydown", (e) => { if (e.key === "Enter") shortenLink(); });
+</script>
+</body>
+</html>
